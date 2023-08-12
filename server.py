@@ -11,6 +11,8 @@ for i in range(OUTPUT_PINS_COUNT):
     pin = Pin(i, Pin.OUT)
     OUTPUT_PINS.append(pin)
 
+NETWORK_ERROR_LED = Pin(11, Pin.OUT)
+
 # setting up wifi connection 
 SSID = "YOUR SSID"
 PASSWORD = "YOUR PASSWORD"
@@ -28,6 +30,7 @@ while max_wait > 0:
     time.sleep(1)
 
 if wlan.status() != 3:
+    NETWORK_ERROR_LED.value(1)
     raise RuntimeError('network connection failed')
 else:
     print('connected')
@@ -48,7 +51,6 @@ def send_response_with_cors(cl, response_data):
     cl.send(response_json)
     cl.close()
 
-    
 status = False
 # Listen for connections
 while True:
