@@ -50,7 +50,7 @@
     <script>
       function green() {
         let pin = document.getElementById("pin_no").value
-        fetch(`http://192.168.1.4/gpio?pin_no=${pin}&pin_status=on`)
+        fetch(`http://192.168.1.10/gpio?pin_no=${pin}&pin_status=on`)
           .then(response => {
             return response.json();
           })
@@ -63,7 +63,7 @@
       }
       function white() {
         let pin = document.getElementById("pin_no").value
-        fetch(`http://192.168.1.4/gpio?pin_no=${pin}&pin_status=off`)
+        fetch(`http://192.168.1.10/gpio?pin_no=${pin}&pin_status=off/sdfet`)
           .then(response => {
             return response.json();
           })

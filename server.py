@@ -51,9 +51,11 @@ def send_response_with_cors(cl, response_data):
     cl.send(response_json)
     cl.close()
 
-status = False
 # Listen for connections
 while True:
+    # request status
+    status = False
+    
     try:
         cl, addr = s.accept()
         print('client connected from', addr)
@@ -79,9 +81,10 @@ while True:
                     query_params[key] = value
 
                 try:
-                    pin_no = int(query_params.get('pin_no')) if int(query_params.get('pin_no')) < OUTPUT_PINS_COUNT else 0
+                    pin_no = int(query_params.get('pin_no')) if int(query_params.get('pin_no')) < OUTPUT_PINS_COUNT else -1
                 except ValueError:
-                    pin_no = 0
+                    pin_no = -1
+                    status = False
                     
                 pin_status = query_params.get('pin_status', '')
  
@@ -107,3 +110,5 @@ while True:
     except OSError as e:
         cl.close()
         print('connection closed')
+
+
