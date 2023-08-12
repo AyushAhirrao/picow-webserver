@@ -14,7 +14,7 @@ for i in OUTPUT_PINS_RANGE:
 
 # initialise general purpose INPUT pins array
 INPUT_PINS = []
-INPUT_PINS_RANGE = range(0, 11)
+INPUT_PINS_RANGE = range(16, 22)
 for i in INPUT_PINS_RANGE:
     pin = Pin(i, Pin.IN)
     INPUT_PINS.append(pin)
