@@ -2,16 +2,27 @@ import network
 import socket
 import time
 import ujson
+import _thread
 from machine import Pin
 
 # initialise general purpose OUTPUT pins array
 OUTPUT_PINS = []
-OUTPUT_PINS_COUNT = 11
-for i in range(OUTPUT_PINS_COUNT):
+OUTPUT_PINS_RANGE = range(0, 11)
+for i in OUTPUT_PINS_RANGE:
     pin = Pin(i, Pin.OUT)
     OUTPUT_PINS.append(pin)
 
+# initialise general purpose INPUT pins array
+INPUT_PINS = []
+INPUT_PINS_RANGE = range(0, 11)
+for i in INPUT_PINS_RANGE:
+    pin = Pin(i, Pin.IN)
+    INPUT_PINS.append(pin)
+
+# Test LED pins
 NETWORK_ERROR_LED = Pin(11, Pin.OUT)
+BLINK_LED = Pin(15, Pin.OUT)
+
 
 # setting up wifi connection 
 SSID = "YOUR SSID"
@@ -50,6 +61,28 @@ def send_response_with_cors(cl, response_data):
     cl.send('HTTP/1.0 200 OK\r\nContent-type: application/json\r\nAccess-Control-Allow-Origin: *\r\n\r\n')
     cl.send(response_json)
     cl.close()
+    
+
+# separate thread other IO operations
+def separate_thread():
+    last_toggle_time = time.ticks_ms()
+    led_state = False
+    while True:
+        current_time = time.ticks_ms()
+        if time.ticks_diff(current_time, last_toggle_time) >= 500:  # Toggle every 500ms
+            last_toggle_time = current_time
+            led_state = not led_state
+            BLINK_LED.value(led_state)
+            
+#         if blink12.value() == 1:
+#             OUTPUT_PINS[1].value(1)
+#         else:
+#             OUTPUT_PINS[1].value(0)
+        
+        time.sleep(0.5)            
+
+_thread.start_new_thread(separate_thread, ())
+
 
 # Listen for connections
 while True:

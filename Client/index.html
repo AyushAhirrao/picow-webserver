@@ -63,7 +63,7 @@
       }
       function white() {
         let pin = document.getElementById("pin_no").value
-        fetch(`http://192.168.1.10/gpio?pin_no=${pin}&pin_status=off/sdfet`)
+        fetch(`http://192.168.1.10/gpio?pin_no=${pin}&pin_status=off`)
           .then(response => {
             return response.json();
           })
