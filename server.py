@@ -114,7 +114,7 @@ while True:
                     query_params[key] = value
 
                 try:
-                    pin_no = int(query_params.get('pin_no')) if int(query_params.get('pin_no')) < OUTPUT_PINS_COUNT else -1
+                    pin_no = int(query_params.get('pin_no')) if int(query_params.get('pin_no')) < len(OUTPUT_PINS_RANGE) else -1
                 except ValueError:
                     pin_no = -1
                     status = False
