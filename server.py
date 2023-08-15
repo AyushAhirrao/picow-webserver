@@ -5,6 +5,10 @@ import ujson
 import _thread
 from machine import Pin
 
+# import settings
+from settings import settings
+config = settings("settings.json")
+
 # initialise general purpose OUTPUT pins array
 OUTPUT_PINS = []
 OUTPUT_PINS_RANGE = range(0, 11)
@@ -25,8 +29,8 @@ BLINK_LED = Pin(15, Pin.OUT)
 
 
 # setting up wifi connection 
-SSID = "YOUR SSID"
-PASSWORD = "YOUR PASSWORD"
+SSID = config["SSID"]
+PASSWORD = config["PASSWORD"]
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
 wlan.connect(SSID, PASSWORD)
@@ -143,5 +147,4 @@ while True:
     except OSError as e:
         cl.close()
         print('connection closed')
-
 
