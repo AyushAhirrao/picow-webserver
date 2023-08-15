@@ -24,7 +24,7 @@ for i in INPUT_PINS_RANGE:
     INPUT_PINS.append(pin)
 
 # Test LED pins
-NETWORK_ERROR_LED = Pin(11, Pin.OUT)
+NETWORK_ERROR_LED = Pin(14, Pin.OUT)
 BLINK_LED = Pin(15, Pin.OUT)
 
 
@@ -72,18 +72,24 @@ def separate_thread():
     last_toggle_time = time.ticks_ms()
     led_state = False
     while True:
+        # blinking led
         current_time = time.ticks_ms()
         if time.ticks_diff(current_time, last_toggle_time) >= 500:  # Toggle every 500ms
             last_toggle_time = current_time
             led_state = not led_state
             BLINK_LED.value(led_state)
             
-#         if blink12.value() == 1:
-#             OUTPUT_PINS[1].value(1)
-#         else:
-#             OUTPUT_PINS[1].value(0)
+        # Sensor control (GPIO0 and GPIO1)
+        if settings("settings.json")["GPIO0_CONTROL"]=="sensor":
+            OUTPUT_PINS[0].value(1)
+            print("sensor control enabled for GPIO0")
+            
+        if settings("settings.json")["GPIO1_CONTROL"]=="sensor":
+            OUTPUT_PINS[1].value(1)
+            print("sensor control enabled for GPIO1")    
         
-        time.sleep(0.5)            
+        time.sleep(0.5)
+
 
 _thread.start_new_thread(separate_thread, ())
 
@@ -124,12 +130,26 @@ while True:
                     status = False
                     
                 pin_status = query_params.get('pin_status', '')
- 
+                
                 print("Pin Number:", pin_no)
-                print("Pin Status:", pin_status)
+                print("Pin Status:", pin_status)                
+                
+                # enable sensors control for sensor operable pins (can be controlled with pin 11)
+                if query_params.get('pin_no') == "11":
+                     if settings("settings.json", {"GPIO0_CONTROL".format(pin_no) : "sensor"}):
+                        print(settings("settings.json")["GPIO0_CONTROL"])
+                     
+                     if settings("settings.json", {"GPIO1_CONTROL".format(pin_no) : "sensor"}):
+                        print(settings("settings.json")["GPIO1_CONTROL"])           
 
                 # handle general purpose output pins status (on/off) 
                 if pin_no != -1 and pin_status in ["on", "off"]:
+            
+                    # switch to pin control is (disable sensor control for sensor operable pins)
+                    if pin_no == 0 or pin_no == 1:
+                        if settings("settings.json", {"GPIO{}_CONTROL".format(pin_no) : "button"}):
+                            print(settings("settings.json")["GPIO{}_CONTROL".format(pin_no)])
+                    
                     pin_status_value = 1 if pin_status == "on" else 0
                     OUTPUT_PINS[pin_no].value(pin_status_value)
                     status = True

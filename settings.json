@@ -1,0 +1,6 @@
+{
+    "SSID": "YOUR SSID",
+    "GPIO0_CONTROL": "sensor",
+    "PASSWORD": "YOUR PASSWORD",
+    "GPIO1_CONTROL": "sensor"
+}
