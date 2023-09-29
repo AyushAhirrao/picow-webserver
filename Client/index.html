@@ -6,6 +6,72 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home automation</title>
+
+    <style>
+        /* Style for the toggle button */
+        .toggle-btn {
+            display: inline-block;
+            cursor: pointer;
+            position: relative;
+            width: 60px;
+            height: 34px;
+            user-select: none;
+        }
+
+        /* Hide the default checkbox */
+        .toggle-btn input {
+            display: none;
+        }
+
+        /* Style for the slider */
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        /* Style for the slider's circle (knob) */
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        /* Change background color when the checkbox is checked */
+        .toggle-btn input:checked+.slider {
+            background-color: #2196F3;
+        }
+
+        /* Move the circle (knob) to the right when the checkbox is checked */
+        .toggle-btn input:checked+.slider:before {
+            transform: translateX(26px);
+        }
+
+        .gpo_btn_container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gpo_btn_container div {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+    </style>
 </head>
 
 <body>
@@ -20,41 +86,87 @@
             let gpo_btn = [null, null, null, null, null, null, null, null, null, null]
 
 
-
             render(container, gpo_btn, host, port)
+
 
         })
 
         function render(container, gpo_btn, host, port) {
             let pin_status = []
+
             fetch(`http://${host}:${port}/out_stat`)
                 .then(response => {
                     return response.json();
                 })
                 .then(data => {
-                    console.log("Fetched data:", data);
                     pin_status = data.status
+                    container.innerHTML = ""
                     for (let i = 0; i < gpo_btn.length; i++) {
                         container.innerHTML += `
+                        
                             <div class="gpo_btn_container">
-                                <button style=${pin_status[i] == 1 ? "background: red;" : "background: green;"} id="gpo_btn${i}">${pin_status[i] == 1 ? "Off" : "On"}</button>
-                            </div>
-                            `
+                                <div class="title-container">
+                                    Button ${i + 1}
+                                    </div>
+
+                                <div class="toggle-btn-container">
+                                        <label class="toggle-btn" id="tlabel${i}">
+                                            <input ${pin_status[i] == 1 ? "checked" : ""} type="checkbox" id="tbtn${i}" >
+                                            <span class="slider"></span>
+                                            </label>
+                                            </div>
+                                            </div >
+                                            `
                     }
 
-                    handle_gpo_btn(gpo_btn, host, port)
+                    handle_gpo_btn(container, gpo_btn, host, port)
                 })
                 .catch(error => {
                     console.error("An error occurred:", error);
                 });
 
+            setInterval(() => {
+                fetch(`http://${host}:${port}/out_stat`)
+                    .then(response => {
+                        return response.json();
+                    })
+                    .then(data => {
+                        pin_status = data.status
+                        container.innerHTML = ""
+                        for (let i = 0; i < gpo_btn.length; i++) {
+                            container.innerHTML += `
+                        
+                            <div class="gpo_btn_container">
+                                <div class="title-container">
+                                    Button ${i + 1}
+                                    </div>
+
+                                <div class="toggle-btn-container">
+                                        <label class="toggle-btn" id="tlabel${i}">
+                                            <input ${pin_status[i] == 1 ? "checked" : ""} type="checkbox" id="tbtn${i}" >
+                                            <span class="slider"></span>
+                                            </label>
+                                </div>
+                            </div >
+                                            `
+                        }
+
+                        handle_gpo_btn(container, gpo_btn, host, port)
+                    })
+                    .catch(error => {
+                        console.error("An error occurred:", error);
+                    });
+
+            }, 3000);
         }
-        function handle_gpo_btn(gpo_btn, host, port) {
+        function handle_gpo_btn(container, gpo_btn, host, port) {
             for (let i = 0; i < gpo_btn.length; i++) {
-                let gpo_btn = document.getElementById(`gpo_btn${i}`)
-                gpo_btn[i] = gpo_btn
-                gpo_btn[i].addEventListener("click", () => {
-                    if (gpo_btn[i].innerText == 'On') {
+                let toggle_btn = document.getElementById(`tbtn${i}`)
+
+                toggle_btn.addEventListener("change", () => {
+                    toggle_btn.disabled = true
+
+                    if (toggle_btn.checked) {
                         fetch(`http://${host}:${port}/gpio?pin_no=${i}&pin_status=on`)
                             .then(response => {
                                 return response.json();
@@ -62,7 +174,11 @@
                             .then(data => {
                                 console.log("Fetched data:", data);
                                 if (data.status) {
-                                    gpo_btn[i].innerText = "Off"
+                                    toggle_btn.disabled = false
+                                    toggle_btn.checked == true
+                                } else {
+                                    toggle_btn.disabled = true
+                                    toggle_btn.checked = false
                                 }
                             })
                             .catch(error => {
@@ -78,7 +194,11 @@
                             .then(data => {
                                 console.log("Fetched data:", data);
                                 if (data.status) {
-                                    gpo_btn[i].innerText = "On"
+                                    toggle_btn.disabled = false
+                                    toggle_btn.checked == false
+                                } else {
+                                    toggle_btn.checked == true
+                                    toggle_btn.checked == false
                                 }
                             })
                             .catch(error => {
@@ -86,8 +206,9 @@
                             });
 
                     }
-
                 })
+
+
             }
         }
 
