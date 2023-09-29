@@ -1,6 +1,44 @@
 {
-    "SSID": "YOUR SSID",
-    "GPIO0_CONTROL": "sensor",
-    "PASSWORD": "YOUR PASSWORD",
-    "GPIO1_CONTROL": "sensor"
+    "SSID": "Airtel_Ayush's Xterm",
+    "PASSWORD": "aircrack-ng",
+    "GPO7": {
+        "control": "button",
+        "status": 0
+    },
+    "GPO6": {
+        "control": "button",
+        "status": 0
+    },
+    "GPO1": {
+        "control": "button",
+        "status": 0
+    },
+    "GPO0": {
+        "control": "button",
+        "status": 1
+    },
+    "GPO3": {
+        "control": "button",
+        "status": 0
+    },
+    "GPO2": {
+        "control": "button",
+        "status": 1
+    },
+    "GPO9": {
+        "control": "button",
+        "status": 0
+    },
+    "GPO8": {
+        "control": "button",
+        "status": 0
+    },
+    "GPO5": {
+        "control": "button",
+        "status": 0
+    },
+    "GPO4": {
+        "control": "button",
+        "status": 1
+    }
 }

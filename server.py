@@ -17,9 +17,12 @@ config = settings("settings.json")
 # initialise general purpose OUTPUT pins array
 OUTPUT_PINS = []
 OUTPUT_PINS_RANGE = [2,3,4,5,6,7,8,9,10,11]
+OUTPUT_PIN_INDEX = 0
 for i in OUTPUT_PINS_RANGE:
     pin = Pin(i, Pin.OUT)
+    pin.value(settings("settings.json")[f"GPO{OUTPUT_PIN_INDEX}"]["status"])
     OUTPUT_PINS.append(pin)
+    OUTPUT_PIN_INDEX += 1
 
 # initialise general purpose INPUT pins array
 INPUT_PINS = []
@@ -218,7 +221,7 @@ def separate_thread():
                 print("reboot")
                 
             # Sensor control (GPIO0 and GPIO1)
-            if settings("settings.json")["GPIO0_CONTROL"]=="sensor":
+            if settings("settings.json")["GPO0"]["control"]=="sensor":
                 if INPUT_PINS[0].value()==0: 
                     OUTPUT_PINS[0].value(1)
                     print("sensor control enabled for GPIO0")
@@ -228,7 +231,7 @@ def separate_thread():
     #                 print("sensor0 off")
                     OUTPUT_PINS[0].value(0)
 
-            if settings("settings.json")["GPIO1_CONTROL"]=="sensor":
+            if settings("settings.json")["GPO1"]["control"]=="sensor":
                 if INPUT_PINS[1].value()==0: 
                     OUTPUT_PINS[1].value(1)
                     print("sensor control enabled for GPIO1")
@@ -299,26 +302,31 @@ while True:
                 pin_status = query_params.get('pin_status', '')
                 
                 print("Pin Number:", pin_no)
-                print("Pin Status:", pin_status)                
-                
+                print("Pin Status:", pin_status)
+
                 # enable sensors control for sensor operable pins (can be controlled with pin 11)
                 if query_params.get('pin_no') == "11":
-                     if settings("settings.json", {"GPIO0_CONTROL".format(pin_no) : "sensor"}):
-                        print(settings("settings.json")["GPIO0_CONTROL"])
+                     if settings("settings.json", {f"GPO0" : {"status" : 0, "control" : "sensor"}}):
+                        print(settings("settings.json")["GPO0"]["control"])
                      
-                     if settings("settings.json", {"GPIO1_CONTROL".format(pin_no) : "sensor"}):
-                        print(settings("settings.json")["GPIO1_CONTROL"])           
+                     if settings("settings.json", {f"GPO1" : {"status" : 0, "control" : "sensor"}}):
+                        print(settings("settings.json")["GPO1"]["control"])           
 
                 # handle general purpose output pins status (on/off) 
                 if pin_no != -1 and pin_status in ["on", "off"]:
             
                     # switch to pin control is (disable sensor control for sensor operable pins)
                     if pin_no == 0 or pin_no == 1:
-                        if settings("settings.json", {"GPIO{}_CONTROL".format(pin_no) : "button"}):
-                            print(settings("settings.json")["GPIO{}_CONTROL".format(pin_no)])
+                        if settings("settings.json", {f"GPO{pin_no}" : {"status" : (1 if pin_status == "on" else 0), "control" : "button"}}):
+                            print(settings("settings.json")[f"GPO{pin_no}"]["control"])
                     
+
                     pin_status_value = 1 if pin_status == "on" else 0
                     OUTPUT_PINS[pin_no].value(pin_status_value)
+                                    
+                    # update gpo stat in file
+                    settings("settings.json", {f"GPO{pin_no}": {"status" : (1 if pin_status == "on" else 0), "control" : "button" }})
+                    
                     status = True
                     
                     response_data = {'status': status}
@@ -336,5 +344,9 @@ while True:
     except OSError as e:
         cl.close()
         print('connection closed')
+
+
+
+
 
 

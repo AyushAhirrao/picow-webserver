@@ -37,7 +37,7 @@
                     for (let i = 0; i < gpo_btn.length; i++) {
                         container.innerHTML += `
                             <div class="gpo_btn_container">
-                                <button id="gpo_btn${i}">${pin_status[i] == 1 ? "Off" : "On"}</button>
+                                <button style=${pin_status[i] == 1 ? "background: red;" : "background: green;"} id="gpo_btn${i}">${pin_status[i] == 1 ? "Off" : "On"}</button>
                             </div>
                             `
                     }
