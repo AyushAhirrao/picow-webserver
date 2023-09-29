@@ -3,7 +3,12 @@ import socket
 import time
 import ujson
 import _thread
-from machine import Pin
+import gc
+import micropython
+from machine import Pin, reset, I2C
+
+from lcd_api import LcdApi
+from pico_i2c_lcd import I2cLcd
 
 # import settings
 from settings import settings
@@ -11,22 +16,136 @@ config = settings("settings.json")
 
 # initialise general purpose OUTPUT pins array
 OUTPUT_PINS = []
-OUTPUT_PINS_RANGE = range(0, 11)
+OUTPUT_PINS_RANGE = [2,3,4,5,6,7,8,9,10,11]
 for i in OUTPUT_PINS_RANGE:
     pin = Pin(i, Pin.OUT)
     OUTPUT_PINS.append(pin)
 
 # initialise general purpose INPUT pins array
 INPUT_PINS = []
-INPUT_PINS_RANGE = range(16, 22)
+INPUT_PINS_RANGE = [16, 17, 18, 19, 22, 26, 27, 28, 1, 0]
 for i in INPUT_PINS_RANGE:
-    pin = Pin(i, Pin.IN)
+    pin = Pin(i, Pin.IN, Pin.PULL_UP)
     INPUT_PINS.append(pin)
+    pin.value(0)
+
+# initialise general purpose INPUT pins array
+INDICATOR_PINS = []
+INDICATOR_PINS_RANGE = [12,13,14,15]
+for i in INDICATOR_PINS_RANGE:
+    pin = Pin(i, Pin.OUT)
+    INDICATOR_PINS.append(pin)
+    pin.value(0)
+
 
 # Test LED pins
-NETWORK_ERROR_LED = Pin(14, Pin.OUT)
-BLINK_LED = Pin(15, Pin.OUT)
+BLINK_LED = INDICATOR_PINS[0]
+NETWORK_ERROR_LED = INDICATOR_PINS[1]
 
+# lcd handler
+I2C_ADDR     = 0x27
+I2C_NUM_ROWS = 4
+I2C_NUM_COLS = 20
+i2c = I2C(0, sda=Pin(20), scl=Pin(21), freq=400000)
+LCD = I2cLcd(i2c, I2C_ADDR, I2C_NUM_ROWS, I2C_NUM_COLS)
+def lcd(string, cursor, clear=False):
+    if clear:
+        LCD.clear()
+#     LCD.display()
+
+    LCD.move_to(cursor[0], cursor[1])
+    LCD.putstr(string)
+
+def start_pattern():
+    welcome_msg = "Welcome!!!"
+    lcd(welcome_msg, (3,0), clear=True)
+    p1 = INDICATOR_PINS[0]
+    p2 = INDICATOR_PINS[1]
+    p3 = INDICATOR_PINS[2]
+    p4 = INDICATOR_PINS[3]
+    
+    p1.value(1)
+    time.sleep(0.1)
+    p2.value(1)
+    time.sleep(0.1)
+    p3.value(1)
+    time.sleep(0.1)
+    p4.value(1)
+    time.sleep(0.3)
+       
+    p1.value(0)
+    time.sleep(0.1)
+    p2.value(0)
+    time.sleep(0.1)
+    p3.value(0)
+    time.sleep(0.1)
+    p4.value(0)
+    time.sleep(0.3)
+    
+    p1.value(1)
+    time.sleep(0.1)
+    p2.value(1)
+    time.sleep(0.1)
+    p3.value(1)
+    time.sleep(0.1)
+    p4.value(1)
+    time.sleep(0.3)
+       
+    p1.value(0)
+    time.sleep(0.1)
+    p2.value(0)
+    time.sleep(0.1)
+    p3.value(0)
+    time.sleep(0.1)
+    p4.value(0)
+    time.sleep(0.3)
+    
+    p4.value(0)
+    p1.value(0)
+    p2.value(0)
+    p3.value(0)
+    p4.value(0)
+    time.sleep(0.3)
+    
+    p1.value(1)
+    p2.value(1)
+    p3.value(1)
+    p4.value(1)
+    time.sleep(0.3)
+     
+    p1.value(0)
+    p2.value(0)
+    p3.value(0)
+    p4.value(0)
+    time.sleep(0.3)
+    
+    p1.value(1)
+    p2.value(1)
+    p3.value(1)
+    p4.value(1)
+    time.sleep(0.3)
+    
+    p1.value(0)
+    p2.value(0)
+    p3.value(0)
+    p4.value(0)
+    time.sleep(0.3)
+    
+    p1.value(1)
+    p2.value(1)
+    p3.value(1)
+    p4.value(1)
+    time.sleep(0.3)
+    
+    p1.value(0)
+    time.sleep(0.1)
+    p2.value(0)
+    time.sleep(0.1)
+    p3.value(0)
+    time.sleep(0.1)
+    p4.value(0)
+
+start_pattern()
 
 # setting up wifi connection 
 SSID = config["SSID"]
@@ -46,6 +165,8 @@ while max_wait > 0:
 
 if wlan.status() != 3:
     NETWORK_ERROR_LED.value(1)
+    network_msg = "Error: Unable to\       connect."
+    lcd(network_msg, (0,0), clear=True)
     raise RuntimeError('network connection failed')
 else:
     print('connected')
@@ -59,6 +180,11 @@ s.bind(addr)
 s.listen(1)
 print('listening on', addr)
 
+ip_status = f"IP-{status[0]}"
+port = f"Port - 80"
+lcd(ip_status, (0,0), clear=True)
+lcd(port, (0,1), clear=False)
+
 # set cors headers 
 def send_response_with_cors(cl, response_data):
     response_json = ujson.dumps(response_data)
@@ -69,26 +195,57 @@ def send_response_with_cors(cl, response_data):
 
 # separate thread other IO operations
 def separate_thread():
+    global status
     last_toggle_time = time.ticks_ms()
     led_state = False
-    while True:
-        # blinking led
-        current_time = time.ticks_ms()
-        if time.ticks_diff(current_time, last_toggle_time) >= 500:  # Toggle every 500ms
-            last_toggle_time = current_time
-            led_state = not led_state
-            BLINK_LED.value(led_state)
-            
-        # Sensor control (GPIO0 and GPIO1)
-        if settings("settings.json")["GPIO0_CONTROL"]=="sensor":
-            OUTPUT_PINS[0].value(1)
-            print("sensor control enabled for GPIO0")
-            
-        if settings("settings.json")["GPIO1_CONTROL"]=="sensor":
-            OUTPUT_PINS[1].value(1)
-            print("sensor control enabled for GPIO1")    
+    reset_pin = Pin(14, Pin.IN)
+    try:
+        while True:
+            BLINK_LED.value(1)
+
+#             print("hello - ", reset_pin.value())
+            current_time = time.ticks_ms()
+            if time.ticks_diff(current_time, last_toggle_time) >= 3000:  # Toggle every 500ms
+                last_toggle_time = current_time
+                # Trigger garbage collection
+                gc.collect()
+                
+                # Print memory information
+                micropython.mem_info()
+                
+            if reset_pin.value() == 1:
+                time.sleep(1)
+                print("reboot")
+                
+            # Sensor control (GPIO0 and GPIO1)
+            if settings("settings.json")["GPIO0_CONTROL"]=="sensor":
+                if INPUT_PINS[0].value()==0: 
+                    OUTPUT_PINS[0].value(1)
+                    print("sensor control enabled for GPIO0")
+                    print("moving")
+
+                else:
+    #                 print("sensor0 off")
+                    OUTPUT_PINS[0].value(0)
+
+            if settings("settings.json")["GPIO1_CONTROL"]=="sensor":
+                if INPUT_PINS[1].value()==0: 
+                    OUTPUT_PINS[1].value(1)
+                    print("sensor control enabled for GPIO1")
+
+                else:
+    #                 print("sensor1 off")
+                    OUTPUT_PINS[1].value(0)
         
-        time.sleep(0.5)
+        
+        
+
+            time.sleep(0.5)
+    except Exception as e:
+        print("Thread Exception:", e)
+    finally:
+        print("Thread exited")
+    
 
 
 _thread.start_new_thread(separate_thread, ())
@@ -115,7 +272,17 @@ while True:
             url = parts[1]
             print("URL:", url)
 
-            if url.startswith('/gpio'):
+            if url.startswith('/out_stat'):
+                                # initialise general purpose OUTPUT pins array
+                OUTPUT_PINS_STAT = []
+                for i in OUTPUT_PINS:
+                    pin_stat = i.value()
+                    OUTPUT_PINS_STAT.append(pin_stat)
+
+                res_data = {'status': OUTPUT_PINS_STAT}
+                send_response_with_cors(cl, res_data)
+                    
+            elif url.startswith('/gpio'):
                 query_params = {}
                 query_string = url.split('?')[1]
                 query_params_list = query_string.split('&')
@@ -154,17 +321,20 @@ while True:
                     OUTPUT_PINS[pin_no].value(pin_status_value)
                     status = True
                     
+                    response_data = {'status': status}
+                    send_response_with_cors(cl, response_data)
+                    
                 else:
                     print("Invalid pin number or status")
+            
             else:
                 print("Invalid URL format")
         else:
             print("Invalid request format")
 
-        response_data = {'status': status}
-        send_response_with_cors(cl, response_data)
 
     except OSError as e:
         cl.close()
         print('connection closed')
+
 
