@@ -109,7 +109,7 @@
         function render(container, appliances_names, gpo_btn, host, port) {
             let pin_status = []
 
-            fetch(`http://${host}:${port}/out_stat`)
+            fetch(`//${host}:${port}/out_stat`)
                 .then(response => {
                     return response.json();
                 })
@@ -141,7 +141,7 @@
                 });
 
             setInterval(() => {
-                fetch(`http://${host}:${port}/out_stat`)
+                fetch(`//${host}:${port}/out_stat`)
                     .then(response => {
                         return response.json();
                     })
@@ -182,7 +182,7 @@
                     toggle_btn.disabled = true
 
                     if (toggle_btn.checked) {
-                        fetch(`http://${host}:${port}/gpio?pin_no=${i}&pin_status=on`)
+                        fetch(`//${host}:${port}/gpio?pin_no=${i}&pin_status=on`)
                             .then(response => {
                                 return response.json();
                             })
@@ -202,7 +202,7 @@
 
                     }
                     else {
-                        fetch(`http://${host}:${port}/gpio?pin_no=${i}&pin_status=off`)
+                        fetch(`//${host}:${port}/gpio?pin_no=${i}&pin_status=off`)
                             .then(response => {
                                 return response.json();
                             })
