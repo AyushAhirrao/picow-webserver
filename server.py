@@ -274,9 +274,45 @@ while True:
         if len(parts) >= 2 and parts[0] == 'GET':
             url = parts[1]
             print("URL:", url)
-
+            
+            gc.collect()
+            
             if url.startswith('/out_stat'):
-                                # initialise general purpose OUTPUT pins array
+                # initialise general purpose OUTPUT pins array
+                OUTPUT_PINS_STAT = []
+                for i in OUTPUT_PINS:
+                    pin_stat = i.value()
+                    OUTPUT_PINS_STAT.append(pin_stat)
+
+                res_data = {'status': OUTPUT_PINS_STAT}
+                send_response_with_cors(cl, res_data)
+            
+                gc.collect()
+        
+            elif url.startswith('/all_out_on'):       
+                GPO_COUNT = 0
+                for i in OUTPUT_PINS:
+                    i.value(1)
+                    settings("settings.json", {f"GPO{GPO_COUNT}": {"status" : 1, "control" : "button" }})
+                    GPO_COUNT += 1              
+
+                OUTPUT_PINS_STAT = []
+                for i in OUTPUT_PINS:
+                    pin_stat = i.value()
+                    OUTPUT_PINS_STAT.append(pin_stat)
+
+                res_data = {'status': OUTPUT_PINS_STAT}
+                send_response_with_cors(cl, res_data)
+            
+                gc.collect()
+        
+            elif url.startswith('/all_out_off'):       
+                GPO_COUNT = 0
+                for i in OUTPUT_PINS:
+                    i.value(0)
+                    settings("settings.json", {f"GPO{GPO_COUNT}": {"status" : 0, "control" : "button" }})
+                    GPO_COUNT += 1              
+
                 OUTPUT_PINS_STAT = []
                 for i in OUTPUT_PINS:
                     pin_stat = i.value()
@@ -285,6 +321,8 @@ while True:
                 res_data = {'status': OUTPUT_PINS_STAT}
                 send_response_with_cors(cl, res_data)
                     
+                gc.collect()
+                
             elif url.startswith('/gpio'):
                 query_params = {}
                 query_string = url.split('?')[1]
@@ -334,7 +372,8 @@ while True:
                     
                 else:
                     print("Invalid pin number or status")
-            
+
+                gc.collect()    
             else:
                 print("Invalid URL format")
         else:
@@ -344,6 +383,7 @@ while True:
     except OSError as e:
         cl.close()
         print('connection closed')
+
 
 
 
